@@ -5,8 +5,6 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import Normalizer
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,7 +36,7 @@ class GroupSQL(object):
             self.queries = queries
 
         else:
-            raise("Unknown queries type")
+            raise Exception("Unknown queries type")
 
         self.n = num_clusters
         self.similarity_metric = similarity_metric
@@ -86,7 +84,7 @@ class GroupSQL(object):
             X = self.tf_idf()
 
         else:
-            raise("Unknown Similarity Metric")
+            raise Exception("Unknown Similarity Metric")
 
         # l2 normalization has done by TfidfVectorizer
         # normalizer = Normalizer(copy=False)
