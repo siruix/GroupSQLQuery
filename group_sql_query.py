@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.manifold import TSNE
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
