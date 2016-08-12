@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.manifold import TSNE
+
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class GroupSQL(object):
         similarity metric
 
 """
-    def __init__(self, queries, num_clusters=3, similarity_metric='length'):
+    def __init__(self, queries, num_clusters=3, similarity_metric='if_idf', n_jobs=-1, idf=True):
         if isinstance(queries, pd.Series):
             self.queries = np.array(queries)
 
@@ -41,6 +41,8 @@ class GroupSQL(object):
 
         self.n = num_clusters
         self.similarity_metric = similarity_metric
+        self.idf = idf
+        self.n_jobs = n_jobs
 
     def query_length_metric(self):
         logger.info('Using length metric. ')
@@ -60,7 +62,7 @@ class GroupSQL(object):
         Only consider alphabetical words. Ignore numbers
         """
         logger.info('Using tf_idf metric. ')
-        vectorizer = TfidfVectorizer(min_df=0.01, token_pattern=r"(?u)\b[A-z]+\b")
+        vectorizer = TfidfVectorizer(min_df=0.01, token_pattern=r"(?u)\b[A-z]+\b", use_idf=self.idf)
         results = vectorizer.fit_transform(self.queries)
         logger.info('The learned idf vector: %s'%vectorizer.idf_)
         logger.info('Terms that were ignored: %s'%', '.join(vectorizer.stop_words_))
@@ -93,9 +95,8 @@ class GroupSQL(object):
 
         logger.info('Using KMeans. ')
         # hardcoded minimize euclidean distance
-        km = KMeans(n_clusters=self.n)
+        km = KMeans(n_clusters=self.n, n_jobs=self.n_jobs)
         cluster_assigned = km.fit_predict(X)
-
         grouped_id = {}
         grouped_queries = {}
         for i in range(self.n):
@@ -104,4 +105,4 @@ class GroupSQL(object):
             grouped_queries[i] = self.queries[index]
 
         logger.info('grouped_queries: %s'%str(grouped_queries))
-        return (km.labels_, grouped_id)
+        return (cluster_assigned, grouped_id)

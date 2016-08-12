@@ -20,7 +20,7 @@ class GroupSQL_Spark(object):
         centroids to generate.
 
 """
-    def __init__(self, df, queryColName='query_body', numFeatures=(1 << 10), numClusters=20, minDocFreq=3):
+    def __init__(self, df, queryColName='query_body', numFeatures=(1 << 10), numClusters=20, minDocFreq=3, idf=True):
         self.df = df
         assert(isinstance(queryColName, str))
         self.query_colname = queryColName
@@ -30,14 +30,22 @@ class GroupSQL_Spark(object):
         self.n = numClusters
         assert(isinstance(minDocFreq, int))
         self.min_doc_freq = minDocFreq
+        self.idf = idf
 
     def group(self):
         reTokenizer = RegexTokenizer(inputCol=self.query_colname, outputCol="words", minTokenLength=2) #, pattern='\W'
         hashingTF = HashingTF(numFeatures=self.num_features, inputCol="words", outputCol="tf")
-        idf = IDF(minDocFreq=self.min_doc_freq, inputCol="tf", outputCol="idf")
-        kmeans = KMeans(featuresCol="idf", predictionCol="cluster_id", k=self.n)
 
-        pipeline = Pipeline(stages=[reTokenizer, hashingTF, idf, kmeans])
+
+        if self.idf == True:
+            idf = IDF(minDocFreq=self.min_doc_freq, inputCol="tf", outputCol="idf")
+            kmeans = KMeans(featuresCol="idf", predictionCol="cluster_id", k=self.n)
+            pipeline = Pipeline(stages=[reTokenizer, hashingTF, idf, kmeans])
+
+        else:
+            kmeans = KMeans(featuresCol="tf", predictionCol="cluster_id", k=self.n)
+            pipeline = Pipeline(stages=[reTokenizer, hashingTF, kmeans])
+
         model = pipeline.fit(self.df)
         prediction = model.transform(self.df)
         return prediction
